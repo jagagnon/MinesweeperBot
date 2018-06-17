@@ -1,29 +1,19 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
 
 # http://minesweeperonline.com/#beginner-200
-# https://github.com/Ghostkeeper/MinesweeperSolver/blob/master/minesweeper.py
-# https://github.com/KrisNguyen135/pyautogui-demo/blob/master/mine_sweeper.py
 # https://github.com/Scalv/MineSweeperBot/blob/master/Board.py
 
 import pyautogui
-import os
 import numpy as np
 import time
 import random
 
-os.chdir('/Users/julien/Dropbox/Python/Minesweeper')
-
 # global game variables
 cell_size = 32
 anchor_offset = 14  # offset to top left cell corner
-vertical_cells = 9
-horizontal_cells = 9
-num_mines = 10
+vertical_cells = 16
+horizontal_cells = 30
+num_mines = 99
 
 pyautogui.PAUSE = 0.01
 
@@ -49,7 +39,7 @@ sum_colours_dict = {sum(v): k for (k, v) in value_colours.items()}
 
 def start_game():
     '''initiate minesweeper bot and board and select first cell'''
-    anchor = pyautogui.locateOnScreen('top left anchor.png')
+    anchor = pyautogui.locateOnScreen('img/top left anchor.png')
     x_start = anchor[0] + anchor_offset
     y_start = anchor[1] + anchor_offset
     pyautogui.click(anchor[0], anchor[1])
@@ -78,7 +68,7 @@ def play(x_start, y_start):
             cell_mine, cell_empty = sweep_mines(updated_board)
 
             # delete empty cells as unflagged mine will still trigger win,
-            # while all flagged mines and some unknown cells won't
+            # while flagged all mines and having some unknown cells won't
             if len(cell_empty) > 0:
                 click_cells(x_start, y_start, cell_empty)
 
@@ -186,8 +176,8 @@ def assign_number(im, x, y):
 
 
 def sweep_mines(board):
-    '''for each row in the board, sweep around numbers and flag mines and
-    tiles to click'''
+    '''for each row, sweep around numbers and flag mines and tiles to click,
+    perform twice to id more empty cells and reduce screenshots'''
     xy_mines = []
     xy_del = []
     interim_board = board.copy()
@@ -249,7 +239,6 @@ def flag_mines(board, i, j):
 #    print('coord :', i, ',', j, '\n value:', cell_value, '\n',
 #          neighbour_cells, '\n', neighbour_coords, '\n', coord_mines, '\n',
 #          coord_del)
-
     return(coord_mines, coord_del)
 
 
@@ -290,5 +279,4 @@ def sweep_surroundings(board, i, j):
     if (j > 0):
         neighbour_cells.append(board[i, j - 1])
         neighbour_coords.append((i, j - 1))
-
     return(neighbour_cells, neighbour_coords)
