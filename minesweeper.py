@@ -59,7 +59,7 @@ def play(x_start, y_start):
         updated_board = refresh_board(horizontal_cells, vertical_cells,
                                       x_start, y_start)
         screenshots += 1
-        print(updated_board, '\n')
+#        print(updated_board, '\n')
         if updated_board[updated_board == 98].any():
             detected_mines = True
             print('Game over motherfucker', '\n n_screeshots:', screenshots)
@@ -190,6 +190,7 @@ def sweep_mines(board):
                 xy_del += coord_del
                 interim_board = sweep_interim_board(interim_board, coord_mines)
     xy_del = list(set(xy_del))
+    xy_mines = list(set(xy_mines))
     print(' mines: ', xy_mines, '\n empty: ', xy_del)
     return(xy_mines, xy_del)
 
@@ -236,6 +237,15 @@ def flag_mines(board, i, j):
             for x in index:
                 coord_mines.append(neighbour_coords[x])
 
+        # implement 1-2-1 strategy
+        if cell_value == 2:
+            add_del, add_mines = one_two_one(neighbour_cells)
+            if add_del is not None:
+                coord_del.append(neighbour_coords[add_del])
+#                coord_mines.append(neighbour_coords[add_mines[0]])
+#                coord_mines.append(neighbour_coords[add_mines[1]])
+                print('used 1-2-1')
+
 #    print('coord :', i, ',', j, '\n value:', cell_value, '\n',
 #          neighbour_cells, '\n', neighbour_coords, '\n', coord_mines, '\n',
 #          coord_del)
@@ -244,39 +254,64 @@ def flag_mines(board, i, j):
 
 def sweep_surroundings(board, i, j):
     '''sweep cells around a number'''
-    neighbour_cells = []
-    neighbour_coords = []
+    neighbour_cells = np.repeat(-1, 8)
+    neighbour_coords = [(-x, -x) for x in np.repeat(1, 8)]
 
     # all but top left corner
     if (i > 0) and (j > 0):
-        neighbour_cells.append(board[i - 1, j - 1])
-        neighbour_coords.append((i - 1, j - 1))
+        neighbour_cells[0] = board[i - 1, j - 1]
+        neighbour_coords[0] = (i - 1, j - 1)
     # all but top row
     if (i > 0):
-        neighbour_cells.append(board[i - 1, j])
-        neighbour_coords.append((i - 1, j))
+        neighbour_cells[1] = board[i - 1, j]
+        neighbour_coords[1] = (i - 1, j)
     # all but top right corner
     if (i > 0) and (j < horizontal_cells - 1):
-        neighbour_cells.append(board[i - 1, j + 1])
-        neighbour_coords.append((i - 1, j + 1))
+        neighbour_cells[2] = board[i - 1, j + 1]
+        neighbour_coords[2] = (i - 1, j + 1)
     # all but rightmost column
     if (j < horizontal_cells - 1):
-        neighbour_cells.append(board[i, j + 1])
-        neighbour_coords.append((i, j + 1))
+        neighbour_cells[3] = board[i, j + 1]
+        neighbour_coords[3] = (i, j + 1)
     # all but bottom right corner
     if (i < vertical_cells - 1) and (j < horizontal_cells - 1):
-        neighbour_cells.append(board[i + 1, j + 1])
-        neighbour_coords.append((i + 1, j + 1))
+        neighbour_cells[4] = board[i + 1, j + 1]
+        neighbour_coords[4] = (i + 1, j + 1)
     # all but bottom row
     if (i < vertical_cells - 1):
-        neighbour_cells.append(board[i + 1, j])
-        neighbour_coords.append((i + 1, j))
+        neighbour_cells[5] = board[i + 1, j]
+        neighbour_coords[5] = (i + 1, j)
     # all but bottom left corner
     if (i < vertical_cells - 1) and (j > 0):
-        neighbour_cells.append(board[i + 1, j - 1])
-        neighbour_coords.append((i + 1, j - 1))
+        neighbour_cells[6] = board[i + 1, j - 1]
+        neighbour_coords[6] = (i + 1, j - 1)
     # all but leftmost column
     if (j > 0):
-        neighbour_cells.append(board[i, j - 1])
-        neighbour_coords.append((i, j - 1))
+        neighbour_cells[7] = board[i, j - 1]
+        neighbour_coords[7] = (i, j - 1)
     return(neighbour_cells, neighbour_coords)
+
+
+def one_two_one(adj_cells):
+    '''flag additional empty cells and mines using the 1-2-1 strategy'''
+    empty = None
+#    mines = None
+    # chech to see if unknown cell is in position
+    if np.isin(np.where(adj_cells == 0), [1, 3, 5, 7]).any():
+        # for all values not at the top row or bottom row, 1-2-1 setup means
+        # that product of adjacent cells is 1
+        if (adj_cells[1] * adj_cells[5]) == 1:
+            # ensure there are not two adjacent zeros
+            if (adj_cells[3] + adj_cells[7]) != 0:
+                empty = np.where(adj_cells == 0)[0]
+#                mines = [empty - 1, empty + 1]
+        # for all setups not at the first of last column
+        elif (adj_cells[3] * adj_cells[7]) == 1:
+            # ensure there are not two adjacent zeros
+            if (adj_cells[1] + adj_cells[5]) != 0:
+                empty = np.where(adj_cells == 0)[0]
+#                mines = [empty - 1, empty + 1]
+                
+    # mines implementation more complex, can have TL flagged but 2 1's adjacent
+    # TO DO, return 
+    return(empty)
