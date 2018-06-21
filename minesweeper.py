@@ -242,8 +242,12 @@ def flag_mines(board, i, j):
             add_del, add_mines = one_two_one(neighbour_cells)
             if add_del is not None:
                 coord_del.append(neighbour_coords[add_del])
-#                coord_mines.append(neighbour_coords[add_mines[0]])
-#                coord_mines.append(neighbour_coords[add_mines[1]])
+            if add_mines is not None:
+                # recode 8 to 0 as 8 is not an index. will also be same ind
+                if np.count_nonzero(np.array(add_mines) == 8):
+                    add_mines[1] = 0
+                coord_mines.append(neighbour_coords[add_mines[0]])
+                coord_mines.append(neighbour_coords[add_mines[1]])
                 print('used 1-2-1')
 
 #    print('coord :', i, ',', j, '\n value:', cell_value, '\n',
@@ -294,24 +298,30 @@ def sweep_surroundings(board, i, j):
 
 def one_two_one(adj_cells):
     '''flag additional empty cells and mines using the 1-2-1 strategy'''
+    # condense the if string into two conditions since repeated code
+    empty_loc = [1, 3, 5, 7]
     empty = None
-#    mines = None
+    mines = None
     # chech to see if unknown cell is in position
-    if np.isin(np.where(adj_cells == 0), [1, 3, 5, 7]).any():
+    if np.isin(np.where(adj_cells == 0), empty_loc).any():
         # for all values not at the top row or bottom row, 1-2-1 setup means
         # that product of adjacent cells is 1
         if (adj_cells[1] * adj_cells[5]) == 1:
             # ensure there are not two adjacent zeros
             if (adj_cells[3] + adj_cells[7]) != 0:
-                empty = np.where(adj_cells == 0)[0]
-#                mines = [empty - 1, empty + 1]
+                empty = np.intersect1d(np.where(adj_cells == 0)[0], empty_loc)[0]
+                if (np.count_nonzero(adj_cells == 99) == 0) and (
+                        np.count_nonzero(adj_cells == 0) == 3):
+                    mines = [empty - 1, empty + 1]
         # for all setups not at the first of last column
         elif (adj_cells[3] * adj_cells[7]) == 1:
             # ensure there are not two adjacent zeros
             if (adj_cells[1] + adj_cells[5]) != 0:
                 empty = np.where(adj_cells == 0)[0]
-#                mines = [empty - 1, empty + 1]
-                
+                empty = np.intersect1d(np.where(adj_cells == 0)[0], empty_loc)[0]
+                if (np.count_nonzero(adj_cells == 99) == 0) and (
+                        np.count_nonzero(adj_cells == 0) == 3):
+                    mines = [empty - 1, empty + 1]
+
     # mines implementation more complex, can have TL flagged but 2 1's adjacent
-    # TO DO, return 
-    return(empty)
+    return(empty, mines)
